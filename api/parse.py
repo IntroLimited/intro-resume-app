@@ -71,7 +71,7 @@ Rules:
 - STRONG POINTS: 3-4 specific strengths, not duplicative of BASICS.
 - COMPENSATION: target comp unless current also noted. Use "$Xk" format. Ranges: "$180k - $195k base".
 - No years of experience mentioned. No years at companies.
-- Extract phone and email if visible.
+- Extract phone and email if visible in the resume but do NOT include them in the written notes sections — only return them in the phone and email JSON fields.
 
 RESUME:
 {resume_text[:7000]}

@@ -209,7 +209,7 @@ class Handler(BaseHTTPRequestHandler):
 
             props = {
                 "Notes": {"rich_text": rt_blocks(notes)},
-                "Stage": {"select": {"name": stage}}
+                "Stage": {"status": {"name": stage}}
             }
             phone = parsed.get('phone', '')
             email = parsed.get('email', '')

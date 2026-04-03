@@ -1,1 +1,619 @@
-cat ~/Downloads/intro-resume-app/public/index.html | pbcopy
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intro — Candidate Parser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0a0a0a;
+      --white: #f5f3ef;
+      --cream: #ede9e1;
+      --stone: #c8c2b4;
+      --ink: #2a2520;
+      --accent: #8b6f47;
+      --green: #4a7c59;
+      --red: #8b3a3a;
+      --border: rgba(255,255,255,0.08);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      min-height: 100vh;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem 5rem;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(139,111,71,0.05) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 90%, rgba(139,111,71,0.03) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 660px;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+
+    .wordmark {
+      font-size: 0.65rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--stone);
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 2.8rem);
+      font-weight: 300;
+      line-height: 1.15;
+      color: var(--white);
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      margin-top: 0.6rem;
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: var(--stone);
+      font-style: italic;
+    }
+
+    .rule {
+      width: 36px;
+      height: 1px;
+      background: var(--accent);
+      margin: 2rem auto;
+      opacity: 0.4;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 2.25rem;
+    }
+
+    .field {
+      margin-bottom: 1.6rem;
+    }
+
+    .field:last-of-type {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--stone);
+      margin-bottom: 0.55rem;
+    }
+
+    label .optional {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.72rem;
+      opacity: 0.6;
+      margin-left: 0.3rem;
+    }
+
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 1px;
+      padding: 0.75rem 1rem;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      color: var(--white);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="text"]::placeholder,
+    textarea::placeholder {
+      color: rgba(200,194,180,0.3);
+      font-style: italic;
+    }
+
+    input[type="text"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(139,111,71,0.45);
+    }
+
+    .select-wrap {
+      position: relative;
+    }
+
+    .select-wrap::after {
+      content: '↓';
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--stone);
+      font-size: 0.8rem;
+      pointer-events: none;
+      font-family: 'DM Mono', monospace;
+    }
+
+    select {
+      cursor: pointer;
+      padding-right: 2.5rem;
+    }
+
+    select option {
+      background: #1a1714;
+      color: var(--white);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.55;
+    }
+
+    /* Two-column row */
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.6rem;
+    }
+
+    .row .field {
+      margin-bottom: 0;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border: 1px dashed rgba(255,255,255,0.13);
+      border-radius: 2px;
+      padding: 2.25rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      background: rgba(255,255,255,0.015);
+    }
+
+    .dropzone:hover,
+    .dropzone.drag-over {
+      border-color: rgba(139,111,71,0.55);
+      background: rgba(139,111,71,0.04);
+    }
+
+    .dropzone.has-file {
+      border-color: rgba(74,124,89,0.55);
+      background: rgba(74,124,89,0.04);
+      border-style: solid;
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.6rem;
+      opacity: 0.4;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .drop-label {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--stone);
+      font-style: italic;
+    }
+
+    .drop-label strong {
+      color: var(--white);
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    .drop-hint {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(200,194,180,0.35);
+      margin-top: 0.4rem;
+    }
+
+    .file-confirmed {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--green);
+      margin-top: 0.5rem;
+      letter-spacing: 0.04em;
+    }
+
+    /* Section divider inside form */
+    .form-divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      margin: 1.8rem 0;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(200,194,180,0.35);
+      margin-bottom: 1.25rem;
+    }
+
+    /* Submit */
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      background: var(--accent);
+      border: none;
+      border-radius: 1px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #0a0a0a;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 1.6rem;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: #9d7f55;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* Status */
+    .status {
+      margin-top: 1.25rem;
+      padding: 0.9rem 1.1rem;
+      border-radius: 1px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .status.visible { display: block; }
+
+    .status.processing {
+      background: rgba(139,111,71,0.07);
+      border: 1px solid rgba(139,111,71,0.18);
+      color: var(--stone);
+      font-style: italic;
+    }
+
+    .status.success {
+      background: rgba(74,124,89,0.08);
+      border: 1px solid rgba(74,124,89,0.25);
+      color: #7fba94;
+    }
+
+    .status.error {
+      background: rgba(139,58,58,0.08);
+      border: 1px solid rgba(139,58,58,0.25);
+      color: #c07878;
+    }
+
+    /* Result preview */
+    .result-card {
+      margin-top: 1.5rem;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 2px;
+      padding: 1.75rem 2.25rem;
+      display: none;
+    }
+
+    .result-card.visible { display: block; }
+
+    .result-eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(200,194,180,0.35);
+      margin-bottom: 1.25rem;
+    }
+
+    .result-block {
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .result-block:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .result-block-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      opacity: 0.8;
+    }
+
+    .result-block-text {
+      font-size: 0.92rem;
+      font-weight: 300;
+      color: rgba(245,243,239,0.65);
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 1px solid rgba(139,111,71,0.25);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(200,194,180,0.18);
+    }
+
+    @media (max-width: 520px) {
+      body { padding: 2rem 1rem 4rem; }
+      .card { padding: 1.5rem 1.25rem; }
+      .row { grid-template-columns: 1fr; }
+      .result-card { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <p class="wordmark">Intro Limited</p>
+      <h1>Candidate <em>Parser</em></h1>
+      <p class="subtitle">Drop a resume. Notes saved to Notion automatically.</p>
+    </header>
+
+    <div class="rule"></div>
+
+    <div class="card">
+
+      <!-- Candidate Info -->
+      <p class="section-label">Candidate</p>
+
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="candidateName" placeholder="e.g. Torreon Everett Meredith" />
+      </div>
+
+      <div class="field">
+        <label>Role this is for</label>
+        <input type="text" id="roleFor" placeholder="e.g. GM – NOT Beauty" />
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Recruiter</label>
+          <div class="select-wrap">
+            <select id="recruiter">
+              <option value="AW">Alyssa (AW)</option>
+              <option value="KB">Kiki (KB)</option>
+              <option value="BL">Bastien (BL)</option>
+              <option value="MA">Michael (MA)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Stage Tag</label>
+          <div class="select-wrap">
+            <select id="stageTag">
+              <option value="Intro Interviewed">Intro Interviewed</option>
+              <option value="General Connection">General Connection</option>
+              <option value="Intro Dismissed">Intro Dismissed</option>
+              <option value="Remove him/herself">Remove him/herself</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <hr class="form-divider" />
+
+      <!-- Resume Upload -->
+      <p class="section-label">Resume</p>
+
+      <div class="field">
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" />
+          <div class="drop-icon">↓</div>
+          <p class="drop-label">Drop resume here or <strong>browse</strong></p>
+          <p class="drop-hint">PDF · DOC · DOCX</p>
+          <p class="file-confirmed" id="fileName"></p>
+        </div>
+      </div>
+
+      <hr class="form-divider" />
+
+      <!-- Optional Highlights -->
+      <p class="section-label">Additional Notes <span style="font-family:serif;font-style:italic;text-transform:none;letter-spacing:0;font-size:0.75rem;opacity:0.55"> — optional</span></p>
+
+      <div class="field">
+        <textarea id="highlights" placeholder="e.g. Highlight experience at companies over $100M revenue. Flag Sephora or Ulta background. Note openness to contract roles."></textarea>
+      </div>
+
+      <button class="btn" id="submitBtn" onclick="submitResume()">
+        Parse &amp; Save to Notion
+      </button>
+
+      <div class="status" id="status"></div>
+    </div>
+
+    <!-- Result Preview -->
+    <div class="result-card" id="resultCard">
+      <p class="result-eyebrow">Saved to Notion</p>
+      <div id="resultContent"></div>
+    </div>
+
+    <footer>Intro Limited &nbsp;·&nbsp; Internal Tool</footer>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('resumeFile');
+    const fileNameEl = document.getElementById('fileName');
+
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+      fileNameEl.textContent = '✓ ' + file.name;
+      dropzone.classList.add('has-file');
+    }
+
+    function setStatus(type, html) {
+      const el = document.getElementById('status');
+      el.className = 'status visible ' + type;
+      el.innerHTML = html;
+    }
+
+    function showResult(data) {
+      const card = document.getElementById('resultCard');
+      const content = document.getElementById('resultContent');
+      card.classList.add('visible');
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      const sections = [
+        { label: 'Basics', key: 'basics' },
+        { label: 'Strong Points', key: 'strong_points' },
+        { label: 'Potential Challenges', key: 'potential_challenges' },
+        { label: 'Compensation', key: 'compensation' },
+      ];
+
+      content.innerHTML = sections.map(s => `
+        <div class="result-block">
+          <p class="result-block-label">${s.label}</p>
+          <p class="result-block-text">${(data[s.key] || '—').replace(/</g, '&lt;')}</p>
+        </div>
+      `).join('');
+    }
+
+    async function submitResume() {
+      const name = document.getElementById('candidateName').value.trim();
+      const roleFor = document.getElementById('roleFor').value.trim();
+      const recruiter = document.getElementById('recruiter').value;
+      const stageTag = document.getElementById('stageTag').value;
+      const highlights = document.getElementById('highlights').value.trim();
+      const file = fileInput.files[0];
+      const btn = document.getElementById('submitBtn');
+
+      if (!name) { setStatus('error', 'Please enter the candidate\'s full name.'); return; }
+      if (!roleFor) { setStatus('error', 'Please enter the role this is for.'); return; }
+      if (!file) { setStatus('error', 'Please upload a resume.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Processing…';
+      document.getElementById('resultCard').classList.remove('visible');
+      setStatus('processing', '<span class="spinner"></span> Reading resume and generating notes…');
+
+      const formData = new FormData();
+      formData.append('candidate_name', name);
+      formData.append('role_for', roleFor);
+      formData.append('recruiter', recruiter);
+      formData.append('stage_tag', stageTag);
+      formData.append('highlights', highlights);
+      formData.append('resume', file);
+
+      try {
+        const res = await fetch('/api/parse', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+        setStatus('success', `✓ Notes saved to Notion for <strong>${name}</strong> &nbsp;·&nbsp; Stage set to <strong>${stageTag}</strong>`);
+        showResult(data);
+      } catch (err) {
+        setStatus('error', '✗ ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Parse & Save to Notion';
+      }
+    }
+  </script>
+</body>
+</html>

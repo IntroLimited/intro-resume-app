@@ -153,6 +153,53 @@ def build_notes(parsed, role_for, recruiter, existing_notes):
 def rt_blocks(text, size=1900):
     return [{"type": "text", "text": {"content": text[i:i+size]}} for i in range(0, len(text), size)]
 
+def upload_resume_to_notion(file_bytes, filename):
+    """Upload a file to Notion and return the file_upload ID."""
+    # Determine content type
+    fn = (filename or '').lower()
+    if fn.endswith('.pdf'):
+        content_type = 'application/pdf'
+    elif fn.endswith('.docx'):
+        content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    else:
+        content_type = 'application/octet-stream'
+
+    # Step 1: Create a file upload object
+    create_url = "https://api.notion.com/v1/file_uploads"
+    headers = {
+        "Authorization": f"Bearer {NOTION_API_KEY}",
+        "Content-Type": "application/json",
+        "Notion-Version": "2022-06-28"
+    }
+    payload = {"filename": filename, "content_type": content_type}
+    req = urllib.request.Request(create_url, data=json.dumps(payload).encode(), headers=headers, method="POST")
+    with urllib.request.urlopen(req) as resp:
+        upload_obj = json.loads(resp.read())
+
+    upload_id = upload_obj["id"]
+    upload_url = upload_obj["upload_url"]
+
+    # Step 2: Send the file bytes
+    import email.mime.multipart
+    boundary = "----NotionUploadBoundary"
+    body = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+        f"Content-Type: {content_type}\r\n\r\n"
+    ).encode() + file_bytes + f"\r\n--{boundary}--\r\n".encode()
+
+    send_headers = {
+        "Authorization": f"Bearer {NOTION_API_KEY}",
+        "Notion-Version": "2022-06-28",
+        "Content-Type": f"multipart/form-data; boundary={boundary}",
+        "Content-Length": str(len(body))
+    }
+    send_req = urllib.request.Request(upload_url, data=body, headers=send_headers, method="POST")
+    with urllib.request.urlopen(send_req) as resp:
+        json.loads(resp.read())
+
+    return upload_id
+
 def parse_multipart(content_type, body):
     fs = cgi.FieldStorage(fp=io.BytesIO(body), environ={
         'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': content_type, 'CONTENT_LENGTH': str(len(body))
@@ -215,6 +262,20 @@ class Handler(BaseHTTPRequestHandler):
             email = parsed.get('email', '')
             if phone: props["Phone"] = {"phone_number": phone}
             if email: props["Primary Email"] = {"email": email}
+
+            # Upload resume file to Notion
+            try:
+                upload_id = upload_resume_to_notion(rbytes, filename)
+                props["RESUME"] = {
+                    "files": [{
+                        "name": filename,
+                        "type": "file_upload",
+                        "file_upload": {"id": upload_id}
+                    }]
+                }
+            except Exception:
+                pass  # If upload fails, continue without it
+
             notion_request("PATCH", f"/pages/{page_id}", {"properties": props})
 
             self._ok({

@@ -80,7 +80,7 @@ Return ONLY this JSON, no markdown:
 {{"basics":"...","strong_points":"...","potential_challenges":"...","compensation":"...","phone":"...","email":"..."}}"""
 
     msg = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5",
         max_tokens=2000,
         messages=[{"role": "user", "content": prompt}]
     )
